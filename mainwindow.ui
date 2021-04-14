@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1001</width>
+    <height>566</height>
+   </rect>
+  </property>
+  <property name="cursor">
+   <cursorShape>ArrowCursor</cursorShape>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="2">
+     <layout class="QVBoxLayout" name="verticalLayout"/>
+    </item>
+    <item row="0" column="3">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Capture/Input</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBox">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="editable">
+         <bool>false</bool>
+        </property>
+        <property name="currentText">
+         <string>Interface</string>
+        </property>
+        <property name="placeholderText">
+         <string/>
+        </property>
+        <item>
+         <property name="text">
+          <string>Interface</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>File</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout_2"/>
+    </item>
+    <item row="1" column="0" colspan="4">
+     <widget class="QTextBrowser" name="textBrowser"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1001</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuLatency_L">
+    <property name="title">
+     <string>Information</string>
+    </property>
+    <addaction name="actionNetwork_Latency"/>
+    <addaction name="actionApplication_Latency"/>
+    <addaction name="actionnDPI"/>
+    <addaction name="actionTCP"/>
+    <addaction name="actionDNS"/>
+    <addaction name="actionHTTP_Packet"/>
+    <addaction name="actionHTTP_User_Agent"/>
+    <addaction name="actionGraph"/>
+   </widget>
+   <addaction name="menuLatency_L"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionNetwork_Latency">
+   <property name="text">
+    <string>Network Latency</string>
+   </property>
+  </action>
+  <action name="actionApplication_Latency">
+   <property name="text">
+    <string>Application Latency</string>
+   </property>
+  </action>
+  <action name="actionnDPI">
+   <property name="text">
+    <string>nDPI</string>
+   </property>
+  </action>
+  <action name="actionTCP">
+   <property name="text">
+    <string>TCP</string>
+   </property>
+  </action>
+  <action name="actionDNS">
+   <property name="text">
+    <string>DNS</string>
+   </property>
+  </action>
+  <action name="actionGraph">
+   <property name="text">
+    <string>Graph</string>
+   </property>
+  </action>
+  <action name="actionHTTP_User_Agent">
+   <property name="text">
+    <string>HTTP User Agent</string>
+   </property>
+  </action>
+  <action name="actionHTTP_Packet">
+   <property name="text">
+    <string>HTTP Packet</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
