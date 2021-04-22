@@ -195,6 +195,8 @@ void MainWindow::selectFile()
 
 }
 
+//v1
+/*
 bool MainWindow::fileStart()
 {
     NetworkLatencyText->clear();
@@ -208,7 +210,7 @@ bool MainWindow::fileStart()
     ui->textBrowser->clear();
     qApp->processEvents();
     if(isFileExist(fileLine->text())){
-        std::string  cc = std::string("tshark -i ndpi -z http,tree ")
+        std::string  cc = std::string("tshark -i ndpi -q -z http,tree ")
                 //tcp
                 +std::string("-z io,stat,1,\"AVG(tcp.analysis.ack_rtt)tcp.analysis.ack_rtt\" ")
                 +std::string("-z io,stat,1,\"COUNT(tcp.analysis.retransmission) tcp.analysis.retransmission\" ")
@@ -326,6 +328,7 @@ bool MainWindow::fileStart()
                 }
                 else{
                     ui->textBrowser->insertPlainText(s+QString("\n"));
+                    qApp->processEvents();
                     s=in.readLine();
                 }
 
@@ -339,7 +342,8 @@ bool MainWindow::fileStart()
     QMessageBox::warning(this,QString("Error"),QString("%1 doesn't exist!").arg(fileLine->text()));
     return false;
 }
-
+*/
+/*
 bool MainWindow::interfaceStart()
 {
     NetworkLatencyText->clear();
@@ -477,6 +481,308 @@ bool MainWindow::interfaceStart()
                 else{
                     ui->textBrowser->insertPlainText(s+QString("\n"));
                     s=in.readLine();
+                }
+
+            }
+            ui->textBrowser->moveCursor(QTextCursor::End);
+            qApp->processEvents();
+        }
+        popenFile.close();
+        return true;
+    }
+    QMessageBox::warning(this,QString("Error"),QString("Interface %1 doesn't exist or time is 0!").arg(interfaceLine->text()));
+    return false;
+
+}
+
+*/
+
+//v2
+bool MainWindow::fileStart(){
+    NetworkLatencyText->clear();
+    ApplicationLatencyText->clear();
+    ndpiText->clear();
+    TCPText->clear();
+    DNSText->clear();
+    HTTPUAText->clear();
+    HTTPText->clear();
+    clearGraph(graphLayout);
+    ui->textBrowser->clear();
+    qApp->processEvents();
+    if(isFileExist(fileLine->text())){
+        std::string  cc = std::string("tshark -i ndpi  -z http,tree ")
+                //tcp
+                +std::string("-z io,stat,1,\"AVG(tcp.analysis.ack_rtt)tcp.analysis.ack_rtt\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.retransmission) tcp.analysis.retransmission\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.fast_retransmission) tcp.analysis.fast_retransmission\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.duplicate_ack) tcp.analysis.duplicate_ack\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.lost_segment) tcp.analysis.lost_segment\" ")
+                +std::string("-z io,stat,1,\"MIN(tcp.window_size)tcp.window_size\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.bytes_in_flight)tcp.analysis.bytes_in_flight\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.connection.synack)tcp.connection.synack\" ")
+                //udp
+                +std::string("-z io,stat,1,\"MAX(udp.pdu.size)udp.pdu.size\" ")
+                //http
+                +std::string("-z io,stat,1,\"COUNT(http.request)http.request\" ")
+                +std::string("-z io,stat,1,\"COUNT(http.response)http.response\" ")
+                //ntp
+                +std::string("-z io,stat,0.01,\"AVG(ntp.delta_time)ntp.delta_time\" ")
+
+                +std::string("-o extcap.ndpi.i:")
+                +std::string((fileLine->text()).toLocal8Bit().data())
+                +std::string(" -o extcap.ndpi.9:-1");
+        char const *command=cc.c_str();
+        std::cout<<command;
+        std::cout.flush();
+        QFile popenFile;
+
+        if((popenFile.open(popen(command, "r"), QIODevice::ReadOnly)))
+        {
+            //QTextStream in(&popenFile);
+            QString s=QString("Iuput file %1 \n\n").arg(fileLine->text());
+            while(!popenFile.atEnd())
+            {
+                if(s.contains(QString("=========="))){
+                    s=popenFile.readLine();
+                }
+
+                else if(s.contains(QString("| IO Statistics "))){
+                    int x=0;
+                    int interval;
+                    QString col;
+                    QLineSeries  *value = new QLineSeries();
+                    qDebug()<<"come in";
+                    while(!s.contains("| Interval:")){
+                        s=popenFile.readLine();
+                    }
+                    interval=s.midRef(12,s.indexOf(QString("secs"))-12).toInt();
+                    qDebug()<<interval;
+                    while(!s.contains("| Col 1:")){
+                        s=popenFile.readLine();
+                    }
+                    col=s.mid(s.indexOf(QString("("))+1,s.indexOf(QString(")"))-s.indexOf(QString("("))-1);
+                    qDebug()<<col;
+                    while(!s.contains("| Interval")){
+                        s=popenFile.readLine();
+                    }
+                    s=popenFile.readLine();
+                    s=popenFile.readLine();
+                    while(!s.contains("==========")){
+                        value ->append(x,s.split(QLatin1Char('|'), Qt::SkipEmptyParts)[1].toFloat());
+                        x+=interval;
+                        s=popenFile.readLine();
+                    }
+                    s=popenFile.readLine();
+                    createGraph(col,value);
+                }
+
+                else if(s==(QString("HTTP/Packet Counter:\n"))){
+                    s=popenFile.readLine();
+                    while(s!=(QString("Network Latency\n"))){
+                        HTTPText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+
+                else if(s==(QString("Network Latency\n"))){
+                    s=popenFile.readLine();
+                    while(s!=(QString("Application Latency\n"))){
+                        NetworkLatencyText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if(s==(QString("Application Latency\n"))){
+                    s=popenFile.readLine();
+                    while(s!=(QString("nDPI_v2\n"))){
+                        ApplicationLatencyText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==(QString("nDPI_v2\n"))) {
+                    s=popenFile.readLine();
+                    while(s!=(QString("tcp_information\n"))){
+                        ndpiText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==(QString("tcp_information\n"))) {
+                    s=popenFile.readLine();
+                    while(s!=(QString("DNS Server_v2\n"))){
+                        TCPText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==(QString("DNS Server_v2\n"))) {
+                    s=popenFile.readLine();
+                    while(s!=(QString("httpua\n"))){
+                        DNSText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==(QString("httpua\n"))) {
+                    s=popenFile.readLine();
+                    while(!popenFile.atEnd()){
+                        HTTPUAText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else{
+                    ui->textBrowser->insertPlainText(s);
+                    ui->textBrowser->moveCursor(QTextCursor::End);
+                    qApp->processEvents();
+                    s=popenFile.readLine();
+                }
+
+            }
+            ui->textBrowser->moveCursor(QTextCursor::End);
+            qApp->processEvents();
+        }
+        popenFile.close();
+        return true;
+    }
+    QMessageBox::warning(this,QString("Error"),QString("%1 doesn't exist!").arg(fileLine->text()));
+    return false;
+}
+
+bool MainWindow::interfaceStart()
+{
+    NetworkLatencyText->clear();
+    ApplicationLatencyText->clear();
+    ndpiText->clear();
+    TCPText->clear();
+    DNSText->clear();
+    HTTPUAText->clear();
+    clearGraph(graphLayout);
+    ui->textBrowser->clear();
+    qApp->processEvents();
+    if(interfaceLine->text()!=QString("") && interfaceSpinBox->text()!="0"){
+        ui->textBrowser->moveCursor(QTextCursor::End);
+        qApp->processEvents();
+        std::string  cc = std::string("echo \"fgh152..\" | sudo -S tshark -i ndpi -z http,tree ")
+                //tcp
+                +std::string("-z io,stat,1,\"AVG(tcp.analysis.ack_rtt)tcp.analysis.ack_rtt\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.retransmission) tcp.analysis.retransmission\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.fast_retransmission) tcp.analysis.fast_retransmission\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.duplicate_ack) tcp.analysis.duplicate_ack\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.lost_segment) tcp.analysis.lost_segment\" ")
+                +std::string("-z io,stat,1,\"MIN(tcp.window_size)tcp.window_size\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.analysis.bytes_in_flight)tcp.analysis.bytes_in_flight\" ")
+                +std::string("-z io,stat,1,\"COUNT(tcp.connection.synack)tcp.connection.synack\" ")
+                //udp
+                +std::string("-z io,stat,1,\"MAX(udp.pdu.size)udp.pdu.size\" ")
+                //http
+                +std::string("-z io,stat,1,\"COUNT(http.request)http.request\" ")
+                +std::string("-z io,stat,1,\"COUNT(http.response)http.response\" ")
+                //ntp
+                +std::string("-z io,stat,1,\"MAX(ntp.delta_time)ntp.delta_time\" ")
+                +std::string("-o extcap.ndpi.i:")
+                +std::string((interfaceLine->text()).toLocal8Bit().data())
+                +std::string(" -o extcap.ndpi.9:-1 -a duration:")
+                +std::string(interfaceSpinBox->text().toLocal8Bit().data());
+
+        char const *command=cc.c_str();
+        std::cout<<command;
+        std::cout.flush();
+        QFile popenFile;
+
+        if((popenFile.open(popen(command, "r"), QIODevice::ReadOnly)))
+        {
+            //QTextStream in(&popenFile);
+            QString s=QString("Starting capture interface %1 \n\n").arg(interfaceLine->text());
+            ui->textBrowser->insertPlainText(s);
+            qApp->processEvents();
+            s="";
+            while(!popenFile.atEnd())
+            {
+                if(s.contains(QString("=========="))){
+                    s=popenFile.readLine();
+                }
+
+                else if(s.contains(QString("| IO Statistics "))){
+                    int x=0;
+                    int interval;
+                    QString col;
+                    QLineSeries  *value = new QLineSeries();
+                    qDebug()<<"come in";
+                    while(!s.contains("| Interval:")){
+                        s=popenFile.readLine();
+                    }
+                    interval=s.midRef(12,s.indexOf(QString("secs"))-12).toInt();
+                    qDebug()<<interval;
+                    while(!s.contains("| Col 1:")){
+                        s=popenFile.readLine();
+                    }
+                    col=s.mid(s.indexOf(QString("("))+1,s.indexOf(QString(")"))-s.indexOf(QString("("))-1);
+                    qDebug()<<col;
+                    while(!s.contains("| Interval")){
+                        s=popenFile.readLine();
+                    }
+                    s=popenFile.readLine();
+                    s=popenFile.readLine();
+                    while(!s.contains("==========")){
+                        value ->append(x,s.split(QLatin1Char('|'), Qt::SkipEmptyParts)[1].toFloat());
+                        x+=interval;
+                        s=popenFile.readLine();
+                    }
+                    s=popenFile.readLine();
+                    createGraph(col,value);
+                }
+
+                else if(s==QString("HTTP/Packet Counter:\n")){
+                    s=popenFile.readLine();
+                    while(s!=QString("Network Latency\n")){
+                        HTTPText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+
+                else if(s==QString("Network Latency\n")){
+                    s=popenFile.readLine();
+                    while(s!=QString("Application Latency\n")){
+                        NetworkLatencyText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if(s==QString("Application Latency\n")){
+                    s=popenFile.readLine();
+                    while(s!=QString("nDPI_v2\n")){
+                        ApplicationLatencyText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==QString("nDPI_v2\n")) {
+                    s=popenFile.readLine();
+                    while(s!=QString("tcp_information\n")){
+                        ndpiText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==QString("tcp_information\n")) {
+                    s=popenFile.readLine();
+                    while(s!=QString("DNS Server_v2\n")){
+                        TCPText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==QString("DNS Server_v2\n")) {
+                    s=popenFile.readLine();
+                    while(s!=QString("httpua\n")){
+                        DNSText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else if (s==QString("httpua\n")) {
+                    s=popenFile.readLine();
+                    while(!popenFile.atEnd()){
+                        HTTPUAText->insertPlainText(s);
+                        s=popenFile.readLine();
+                    }
+                }
+                else{
+                    ui->textBrowser->insertPlainText(s);
+                    ui->textBrowser->moveCursor(QTextCursor::End);
+                    qApp->processEvents();
+                    s=popenFile.readLine();
                 }
 
             }
